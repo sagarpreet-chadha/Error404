@@ -42,7 +42,7 @@ public class Client
 
             Retrofit r = new Retrofit.Builder().baseUrl("http://10.0.0.28:3000").
                     addConverterFactory(GsonConverterFactory.create(
-                            new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create())).client(client)
+                            new GsonBuilder().setLenient().excludeFieldsWithoutExposeAnnotation().create())).client(client)
                     .build();
             service = r.create(FileUploadService.class);
         }
