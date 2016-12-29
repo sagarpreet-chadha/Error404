@@ -2,6 +2,7 @@ package thuglife.teamerror404;
 
 import android.content.ClipData;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.support.design.widget.FloatingActionButton;
@@ -45,6 +46,7 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
     private BeaconManager beaconManager;
     ArrayList<String> beaconIDList;
     ArrayList<Region> regionList;
+    ArrayList<ItemResponse.ItemAvailable> availbleItems;
     private Region TestRoom,Git,Android,iOS,Python,Office,Ruby;
 
     @Override
@@ -61,15 +63,16 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
         beaconIDList=new ArrayList<>();
         regionList = new ArrayList<>();
 
+        availbleItems = new ArrayList<>();
 
         Identifier nameSpaceId = Identifier.parse("0x5dc33487f02e477d4058");
 
-         TestRoom  = new Region("Test Room",nameSpaceId, Identifier.parse("0x0117c59825E9"),null);
-         Git = new Region("Git Room",nameSpaceId,Identifier.parse("0x0117c55be3a8"),null);
-         Android = new Region("Android Room",nameSpaceId,Identifier.parse("0x0117c552c493"),null);
+         TestRoom  = new Region("Dell",nameSpaceId, Identifier.parse("0x0117c59825E9"),null);
+         Git = new Region("Raymonds",nameSpaceId,Identifier.parse("0x0117c55be3a8"),null);
+         Android = new Region("Nike",nameSpaceId,Identifier.parse("0x0117c552c493"),null);
          iOS = new Region("iOS Room",nameSpaceId,Identifier.parse("0x0117c55fc452"),null);
-         Python = new Region("Python Room",nameSpaceId,Identifier.parse("0x0117c555c65f"),null);
-         Office = new Region("Office",nameSpaceId,Identifier.parse("0x0117c55d6660"),null);
+         Python = new Region("Peter England",nameSpaceId,Identifier.parse("0x0117c555c65f"),null);
+         Office = new Region("OnePlus",nameSpaceId,Identifier.parse("0x0117c55d6660"),null);
          Ruby = new Region("Ruby Room",nameSpaceId,Identifier.parse("0x0117c55ec086"),null);
 
 
@@ -81,6 +84,23 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
         lm.setOrientation(LinearLayoutManager.VERTICAL);
         recyclerView.setLayoutManager(lm);
         recyclerView.setAdapter(adapterDashboard);
+
+        //updateDatafromServer();
+
+
+        AlertDialog.Builder db = new AlertDialog.Builder(HomeScreen.this);
+        db.setTitle("Check !");
+        db.setMessage("Near By Shops have something useful for you !");
+        db.setPositiveButton("Show", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                                    Intent intent = new Intent();
+                                    intent.setClass(HomeScreen.this,NearBuyActivity.class);
+                                    intent.putExtra("NearBuyList",availbleItems);
+                                    startActivity(intent);
+            }
+        });
+        db.create().show();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -131,6 +151,10 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
                 db.setNeutralButton("Search", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
+                        Intent intent = new Intent();
+                        intent.setClass(HomeScreen.this,NearBuyActivity.class);
+                        intent.putExtra("NearBuyList",availbleItems);
+                        startActivity(intent);
 
                     }
                 });
@@ -172,6 +196,7 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
 
                         dashboardItems.remove(j);
                         adapterDashboard.notifyItemRemoved(j);
+                        //removing
                     }
                 });
                 db.setNeutralButton("No", new DialogInterface.OnClickListener() {
@@ -191,6 +216,23 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
 
     }
 
+    private void updateDatafromServer() {
+
+        FileUploadService service = Client.getService();
+        Call<ItemResponse> call = service.update();
+        call.enqueue(new Callback<ItemResponse>() {
+            @Override
+            public void onResponse(Call<ItemResponse> call, Response<ItemResponse> response) {
+
+            }
+
+            @Override
+            public void onFailure(Call<ItemResponse> call, Throwable t) {
+
+            }
+        });
+    }
+
     void updateData(){
         dashboardItems.clear();
         dashboardItems.addAll(new DashboardItem().getAllItems());
@@ -208,7 +250,7 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
 
         beaconManager.addMonitorNotifier(new MonitorNotifier() {
             @Override
-            public void didEnterRegion(Region region) {
+            public void didEnterRegion(final Region region) {
                 Toast.makeText(HomeScreen.this,"I just saw an beacon !"+region.getUniqueId(),Toast.LENGTH_SHORT).show();
                 Log.i("----","Entered Region "+region.getUniqueId());
                 //adding to server..
@@ -217,9 +259,15 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
                 call.enqueue(new Callback<ItemResponse>() {
                     @Override
                     public void onResponse(Call<ItemResponse> call, Response<ItemResponse> response) {
+                        Toast.makeText(HomeScreen.this,"OnResponse!",Toast.LENGTH_SHORT).show();
+                        Log.i("----","Error Code: " +response.code()+"with Body "+response.body());
                         if (response.isSuccessful()) {
+                            Log.i("----","Yes Response is successful !");
                             ItemResponse i = response.body();
-                            Log.i("----", "Available Item" + i.getItemAvailableArrayList().get(0));
+                            if(i.getItemAvailableArrayList()!=null) {
+                                availbleItems.addAll(i.getItemAvailableArrayList());
+                            }
+
                         }
                     }
 
@@ -252,9 +300,17 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
                     call.enqueue(new Callback<ItemResponse>() {
                         @Override
                         public void onResponse(Call<ItemResponse> call, Response<ItemResponse> response) {
+                            Toast.makeText(HomeScreen.this,"OnResponse!",Toast.LENGTH_SHORT).show();
+                            Log.i("----","Error Code:" +response.code()+"with Body "+response.body());
+
                             if (response.isSuccessful()) {
+
                                 ItemResponse i = response.body();
-                                
+                                Log.i("----to string",i.toString());
+                                if(i.getItemAvailableArrayList()!=null) {
+                                    availbleItems.addAll(i.getItemAvailableArrayList());
+                                }
+
                             }}
 
                         @Override

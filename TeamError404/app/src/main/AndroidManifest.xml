@@ -33,7 +33,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".MonitoringActivity"></activity>
-        <activity android:name=".NearBuyActivity"></activity>
+        <activity android:name=".NearBuyActivity"
+            android:launchMode="singleInstance"></activity>
     </application>
 
 </manifest>

@@ -1,13 +1,17 @@
 package thuglife.teamerror404;
 
+import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  * Created by Lenovo on 29-12-2016.
  */
-public class ItemResponse {
+public class ItemResponse implements Serializable {
+
+    @Expose
     @SerializedName("ItemsAvailable")
     ArrayList<ItemAvailable> itemAvailableArrayList;
 
@@ -15,11 +19,36 @@ public class ItemResponse {
         return itemAvailableArrayList;
     }
 
-    private class ItemAvailable {
+    public void setItemAvailableArrayList(ArrayList<ItemAvailable> itemAvailableArrayList) {
+        this.itemAvailableArrayList = itemAvailableArrayList;
+    }
+
+    @Override
+    public String toString() {
+        return "ItemResponse{" +
+                "itemAvailableArrayList=" + itemAvailableArrayList +
+                '}';
+    }
+
+    public class ItemAvailable implements Serializable{
+        @Expose
         String instance_id;
+        @Expose
         String category;
+        @Expose
         String name;
+        @Expose
         String shop;
+
+        @Override
+        public String toString() {
+            return "ItemAvailable{" +
+                    "instance_id='" + instance_id + '\'' +
+                    ", category='" + category + '\'' +
+                    ", name='" + name + '\'' +
+                    ", shop='" + shop + '\'' +
+                    '}';
+        }
 
         public String getInstance_id() {
             return instance_id;

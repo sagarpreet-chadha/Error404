@@ -26,7 +26,13 @@ public interface FileUploadService {
   @POST("/useradd")
   Call<ResponseBody> postItem(@Body ArrayList<DashboardItem> list);
 
+  @POST("/userremove")
+  Call<ResponseBody> delete(@Body ArrayList<DashboardItem> list);
+
   @GET("/beacon")
   Call<ItemResponse> getShops(@Query("instance_id") String instanceID);
+
+  @GET("/userDetails")
+  Call<ItemResponse> update();
 
 }
