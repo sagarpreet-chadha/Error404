@@ -45,6 +45,7 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
     private BeaconManager beaconManager;
     ArrayList<String> beaconIDList;
     ArrayList<Region> regionList;
+    private Region TestRoom,Git,Android,iOS,Python,Office,Ruby;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,8 +58,19 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
         beaconManager.getBeaconParsers().add(new BeaconParser().
                 setBeaconLayout(BeaconParser.EDDYSTONE_UID_LAYOUT));
         beaconManager.bind(this);
-        beaconIDList = new ArrayList<>();
+        beaconIDList=new ArrayList<>();
         regionList = new ArrayList<>();
+
+
+        Identifier nameSpaceId = Identifier.parse("0x5dc33487f02e477d4058");
+
+         TestRoom  = new Region("Test Room",nameSpaceId, Identifier.parse("0x0117c59825E9"),null);
+         Git = new Region("Git Room",nameSpaceId,Identifier.parse("0x0117c55be3a8"),null);
+         Android = new Region("Android Room",nameSpaceId,Identifier.parse("0x0117c552c493"),null);
+         iOS = new Region("iOS Room",nameSpaceId,Identifier.parse("0x0117c55fc452"),null);
+         Python = new Region("Python Room",nameSpaceId,Identifier.parse("0x0117c555c65f"),null);
+         Office = new Region("Office",nameSpaceId,Identifier.parse("0x0117c55d6660"),null);
+         Ruby = new Region("Ruby Room",nameSpaceId,Identifier.parse("0x0117c55ec086"),null);
 
 
         dashboardItems = new ArrayList<>();
@@ -95,7 +107,9 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
                         
                         //adding to server..
                         FileUploadService service = Client.getService();
-                        Call<ResponseBody> call = service.postItem(dashboardItems);
+                        ArrayList<DashboardItem> temp = new ArrayList<DashboardItem>();
+                        temp.add(dashboardItem);
+                        Call<ResponseBody> call = service.postItem(temp);
                         call.enqueue(new Callback<ResponseBody>() {
                             @Override
                             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -178,6 +192,7 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
     }
 
     void updateData(){
+        dashboardItems.clear();
         dashboardItems.addAll(new DashboardItem().getAllItems());
         adapterDashboard.notifyDataSetChanged();
     }
@@ -191,20 +206,30 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
     @Override
     public void onBeaconServiceConnect() {
 
-        Identifier nameSpaceId = Identifier.parse("0x5dc33487f02e477d4058");
-
-        Region TestRoom  = new Region("Test Room",nameSpaceId, Identifier.parse("0x0117c59825E9"),null);
-        Region Git = new Region("Git Room",nameSpaceId,Identifier.parse("0x0117c55be3a8"),null);
-        Region Android = new Region("Android Room",nameSpaceId,Identifier.parse("0x0117c552c493"),null);
-        Region iOS = new Region("iOS Room",nameSpaceId,Identifier.parse("0x0117c55fc452"),null);
-        Region Python = new Region("Python Room",nameSpaceId,Identifier.parse("0x0117c555c65f"),null);
-        Region Office = new Region("Office",nameSpaceId,Identifier.parse("0x0117c55d6660"),null);
-        Region Ruby = new Region("Ruby Room",nameSpaceId,Identifier.parse("0x0117c55ec086"),null);
         beaconManager.addMonitorNotifier(new MonitorNotifier() {
             @Override
             public void didEnterRegion(Region region) {
                 Toast.makeText(HomeScreen.this,"I just saw an beacon !"+region.getUniqueId(),Toast.LENGTH_SHORT).show();
                 Log.i("----","Entered Region "+region.getUniqueId());
+                //adding to server..
+                FileUploadService service = Client.getService();
+                Call<ItemResponse> call = service.getShops(region.getId2().toString());
+                call.enqueue(new Callback<ItemResponse>() {
+                    @Override
+                    public void onResponse(Call<ItemResponse> call, Response<ItemResponse> response) {
+                        if (response.isSuccessful()) {
+                            ItemResponse i = response.body();
+                            Log.i("----", "Available Item" + i.getItemAvailableArrayList().get(0));
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ItemResponse> call, Throwable t) {
+                        Log.i("----","Response Failed :"+t.getMessage());
+
+                    }
+                });
+
             }
 
             @Override
@@ -216,16 +241,21 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
 
             @Override
             public void didDetermineStateForRegion(int state, Region region) {
-                Toast.makeText(HomeScreen.this,"Switched !"+region.getUniqueId(),Toast.LENGTH_SHORT).show();
-                if(state==INSIDE){
-                    //adding to server..
+                switch (state){
+                    case INSIDE:
+                        Log.i("----","Enter " + region.getUniqueId());
+                        beaconIDList.add(region.getId2().toString());
+                        regionList.add(region);
+                        //adding to server..
                     FileUploadService service = Client.getService();
                     Call<ItemResponse> call = service.getShops(region.getId2().toString());
                     call.enqueue(new Callback<ItemResponse>() {
                         @Override
                         public void onResponse(Call<ItemResponse> call, Response<ItemResponse> response) {
-                            Log.i("----","Response :"+response.isSuccessful());
-                        }
+                            if (response.isSuccessful()) {
+                                ItemResponse i = response.body();
+                                
+                            }}
 
                         @Override
                         public void onFailure(Call<ItemResponse> call, Throwable t) {
@@ -233,11 +263,29 @@ public class HomeScreen extends AppCompatActivity implements AdapterDashboard.Ad
 
                         }
                     });
-                }
-                if(state==OUTSIDE){
+
+                        break;
+                    case OUTSIDE:
+                        Log.i("----","Outside " + region.getUniqueId());
+                        if(regionList.contains(region)){
+                            regionList.remove(region);
+                        }
+                        if(beaconIDList!=null)
+                        if(beaconIDList.contains(region.getUniqueId())) {
+                            beaconIDList.remove(region.getUniqueId());
+
+                        }
+                        break;
                 }
 
-                Log.i("----","Current Beacons Available:" +beaconIDList.size());
+//                if(state==INSIDE){
+//                    Log.i("----","INSIDE:"+region.getUniqueId());
+//
+//                }
+//                if(state==OUTSIDE){
+//                    Log.i("----","OUTSIDE:"+region.getUniqueId());
+//                }
+
             }
         });
 

@@ -40,9 +40,9 @@ public class Client
                     })
                     .build();
 
-            Retrofit r = new Retrofit.Builder().baseUrl("http://10.0.0.174:3000").
+            Retrofit r = new Retrofit.Builder().baseUrl("http://10.0.0.28:3000").
                     addConverterFactory(GsonConverterFactory.create(
-                            new GsonBuilder().create())).client(client)
+                            new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create())).client(client)
                     .build();
             service = r.create(FileUploadService.class);
         }
